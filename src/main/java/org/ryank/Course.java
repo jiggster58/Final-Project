@@ -27,17 +27,40 @@ public class Course {
         return Math.abs(sum - 100) < 0.0001;
     }
 
+    // --- Register a student ---
     public boolean registerStudent(Student student) {
         if (registeredStudents.contains(student)) return false;
+
         registeredStudents.add(student);
+        student.registerCourse(this);         
         for (Assignment a : assignments) a.getScores().add(null);
         return true;
     }
 
-    public boolean addAssignment(String name, double weight) {
-        assignments.add(new Assignment(Util.toTitleCase(name), weight));
-        for (Student s : registeredStudents) assignments.get(assignments.size()-1).getScores().add(null);
+    // --- Drop a student ---
+    public boolean dropStudent(Student student) {
+        if (!registeredStudents.contains(student)) return false;
+
+        registeredStudents.remove(student);
+        student.dropCourse(this);
+        for (Assignment a : assignments) {
+            int index = registeredStudents.indexOf(student);
+            if (index >= 0 && index < a.getScores().size()) {
+                a.getScores().remove(index);
+            }
+        }
         return true;
+    }
+
+    public boolean addAssignment(String name, double weight) {
+        assignments.add(new Assignment(Util.toTitleCase(name), weight, registeredStudents.size()));
+        return true;
+    }
+
+    public void generateScores() {
+        for (Assignment a : assignments) {
+            a.generateRandomScore();
+        }
     }
 
     public String toSimplifiedString() {
@@ -46,7 +69,8 @@ public class Course {
 
     @Override
     public String toString() {
-        return toSimplifiedString() + ", Assignments: " + assignments.size() + ", Students: " + registeredStudents.size() +
+        return toSimplifiedString() + ", Assignments: " + assignments.size() +
+                ", Students: " + registeredStudents.size() +
                 ", WeightValid: " + isAssignmentWeightValid();
     }
 }
